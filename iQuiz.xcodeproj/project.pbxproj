@@ -16,7 +16,7 @@
 /* Begin PBXFileReference section */
 		AAC524BA2BE2F3BC002516C4 /* iQuiz.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iQuiz.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAC524BD2BE2F3BC002516C4 /* iQuizApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iQuizApp.swift; sourceTree = "<group>"; };
-		AAC524BF2BE2F3BC002516C4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AAC524BF2BE2F3BC002516C4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; usesTabs = 0; };
 		AAC524C12BE2F3BD002516C4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AAC524C42BE2F3BD002516C4 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
