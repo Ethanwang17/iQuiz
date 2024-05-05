@@ -9,26 +9,22 @@ import SwiftUI
 
 struct QuizTopic: Identifiable {
     var id = UUID()
-    var icon: String
     var title: String
     var description: String
 }
 
 struct ContentView: View {
     @State private var showingAlert = false
-    let quizTopics = [
-        QuizTopic(icon: "🔢", title: "Mathematics", description: "Math questions and equations"),
-        QuizTopic(icon: "🦸", title: "Marvel Super Heroes", description: "Marvel super hero trivia"),
-        QuizTopic(icon: "🔬", title: "Science", description: "Science facts and knowledge")
-    ]
+    @State private var invalidURLAlert = false
+    
+    @State private var url = ""
+    @State private var quizTopics = [QuizTopic]()
     
     var body: some View {
         NavigationView {
             List(quizTopics) { topic in
                 NavigationLink(destination: QuizDetailView(topic: topic)) {
                     HStack {
-                        Text(topic.icon)
-                            .font(.title)
                         VStack(alignment: .leading) {
                             Text(topic.title)
                                 .font(.headline)
@@ -43,15 +39,82 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Settings") {
-                        showingAlert = true
+                        url = ""
+                        showingAlert.toggle()
                     }
-                    .alert("Settings Go Here", isPresented: $showingAlert) {
-                        Button("OK", role: .cancel) {}
+                    .alert("Enter Valid URL", isPresented: $showingAlert) {
+                        TextField("Enter URL Here", text: $url)
+                        Button("Cancel", role: .cancel) { }
+                        Button("Check Now"){
+                            downloadQuizData(from: url)
+                        }
                     }
                 }
             }
+            .alert("Invalid URL", isPresented: $invalidURLAlert) {
+                Button("OK", role: .cancel) { }
+            }
+        }
+        .onAppear {
+            loadURLFromSettings()
         }
     }
+    
+    
+    func loadURLFromSettings() {
+        if let savedURL = UserDefaults.standard.string(forKey: "quizDataURL") {
+            url = savedURL
+            downloadQuizData(from: url)
+        } else {
+            let defaultURL = "https://tednewardsandbox.site44.com/questions.json"
+            url = defaultURL
+            downloadQuizData(from: defaultURL)
+        }
+    }
+    
+    
+    
+    func downloadQuizData(from urlString: String) {
+        print("Downloading data from URL: \(urlString)")
+        
+        guard let url = URL(string: urlString) else {
+            print("Invalid URL")
+            return
+        }
+        
+        UserDefaults.standard.set(urlString, forKey: "quizDataURL")
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data {
+                do {
+                    let decoder = JSONDecoder()
+                    let quizData = try decoder.decode([QuizData].self, from: data)
+                    DispatchQueue.main.async {
+                        self.quizTopics = quizData.map {
+                            QuizTopic(title: $0.title, description: $0.desc)
+                        }
+                    }
+                } catch {
+                    print("Error decoding JSON: \(error)")
+                }
+            } else {
+                invalidURLAlert = true
+                print("No data received: \(error?.localizedDescription ?? "Unknown error")")
+            }
+        }.resume()
+    }
+}
+
+struct QuizData: Codable {
+    let title: String
+    let desc: String
+    let questions: [Question]
+}
+
+struct Question: Codable {
+    let text: String
+    let answer: String
+    let answers: [String]
 }
 
 struct QuizDetailView: View {
@@ -70,3 +133,4 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
