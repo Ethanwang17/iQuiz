@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Network
 
 struct QuizTopic: Identifiable {
     var id = UUID()
@@ -16,6 +17,7 @@ struct QuizTopic: Identifiable {
 struct ContentView: View {
     @State private var showingAlert = false
     @State private var invalidURLAlert = false
+    @State private var isNetworkConnected = false
     
     @State private var url = ""
     @State private var quizTopics = [QuizTopic]()
@@ -54,12 +56,15 @@ struct ContentView: View {
             .alert("Invalid URL", isPresented: $invalidURLAlert) {
                 Button("OK", role: .cancel) { }
             }
+            .alert("No Network Detected", isPresented: $isNetworkConnected) {
+                Button("OK", role: .cancel) { }
+            }
         }
         .onAppear {
+            checkNetworkStatus()
             loadURLFromSettings()
         }
     }
-    
     
     func loadURLFromSettings() {
         if let savedURL = UserDefaults.standard.string(forKey: "quizDataURL") {
@@ -71,8 +76,6 @@ struct ContentView: View {
             downloadQuizData(from: defaultURL)
         }
     }
-    
-    
     
     func downloadQuizData(from urlString: String) {
         print("Downloading data from URL: \(urlString)")
@@ -102,6 +105,22 @@ struct ContentView: View {
                 print("No data received: \(error?.localizedDescription ?? "Unknown error")")
             }
         }.resume()
+    }
+    
+    func checkNetworkStatus() {
+        let monitor = NWPathMonitor()
+        let queue = DispatchQueue.global(qos: .background)
+        
+        monitor.pathUpdateHandler = { path in
+            if path.status == .satisfied {
+                print("We're connected!")
+            } else {
+                isNetworkConnected = true
+                print("No connection.")
+            }
+        }
+        
+        monitor.start(queue: queue)
     }
 }
 
@@ -133,4 +152,3 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
-
