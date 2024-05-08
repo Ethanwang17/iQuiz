@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Network
 
 struct QuizTopic: Identifiable, Codable {
     var id = UUID()
