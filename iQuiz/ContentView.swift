@@ -21,7 +21,7 @@ struct ContentView: View {
     @State private var isNetworkConnected = false
     @State private var url = ""
     @State private var quizTopics = [QuizTopic]()
-
+    
     var body: some View {
         NavigationView {
             List(quizTopics) { topic in
@@ -67,7 +67,7 @@ struct ContentView: View {
             loadURLFromSettings()
         }
     }
-
+    
     func loadURLFromSettings() {
         if let savedURL = UserDefaults.standard.string(forKey: "quizDataURL") {
             url = savedURL
@@ -82,7 +82,7 @@ struct ContentView: View {
             downloadQuizData(from: defaultURL)
         }
     }
-
+    
     func downloadQuizData(from urlString: String) {
         print("Downloading data from URL: \(urlString)")
         guard let url = URL(string: urlString) else {
@@ -108,17 +108,14 @@ struct ContentView: View {
             }
         }.resume()
     }
-
+    
     func checkNetworkStatus() {
         let monitor = NWPathMonitor()
         let queue = DispatchQueue.global(qos: .background)
         
         monitor.pathUpdateHandler = { path in
-            if path.status == .satisfied {
-                print("We're connected!")
-            } else {
+            if path.status != .satisfied {
                 isNetworkConnected = true
-                print("No connection.")
             }
         }
         
@@ -126,25 +123,25 @@ struct ContentView: View {
     }
 }
 
-    func saveQuizDataToFile(quizData: [QuizData]) {
-        let jsonEncoder = JSONEncoder()
-        if let jsonData = try? jsonEncoder.encode(quizData) {
-            let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let fileURL = documentsDirectory.appendingPathComponent("quizData.json")
-            try? jsonData.write(to: fileURL)
-        }
-    }
-
-    func loadQuizDataFromFile() -> [QuizData]? {
+func saveQuizDataToFile(quizData: [QuizData]) {
+    let jsonEncoder = JSONEncoder()
+    if let jsonData = try? jsonEncoder.encode(quizData) {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let fileURL = documentsDirectory.appendingPathComponent("quizData.json")
-        if let jsonData = try? Data(contentsOf: fileURL) {
-            let jsonDecoder = JSONDecoder()
-            if let quizData = try? jsonDecoder.decode([QuizData].self, from: jsonData) {
-                return quizData
-            }
+        try? jsonData.write(to: fileURL)
+    }
+}
+
+func loadQuizDataFromFile() -> [QuizData]? {
+    let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let fileURL = documentsDirectory.appendingPathComponent("quizData.json")
+    if let jsonData = try? Data(contentsOf: fileURL) {
+        let jsonDecoder = JSONDecoder()
+        if let quizData = try? jsonDecoder.decode([QuizData].self, from: jsonData) {
+            return quizData
         }
-        return nil
+    }
+    return nil
 }
 
 struct QuizData: Codable {
@@ -171,15 +168,15 @@ struct QuestionListView: View {
     @State private var answers: [String?] = []
     @State private var isAnswerViewShown = false
     @State private var userScore = 0
-
+    
     var totalQuestions: Int {
         customTopic.questions.count
     }
-
+    
     var currentQuestion: Question {
         customTopic.questions[currentIndex]
     }
-
+    
     var body: some View {
         VStack {
             switch (currentIndex < customTopic.questions.count, isAnswerViewShown) {
@@ -195,7 +192,7 @@ struct QuestionListView: View {
             }
         }
     }
-
+    
     func didSelectAnswerIndex(_ answerIndex: Int?) {
         guard let answerIndex = answerIndex else {
             return
@@ -214,11 +211,11 @@ struct AnswerView: View {
     let correctAnswer: String
     let userAnswer: String?
     let dismissAction: () -> Void
-
+    
     var isAnswerCorrect: Bool {
         userAnswer == correctAnswer
     }
-
+    
     var body: some View {
         VStack {
             Text(customQuestion.text)
@@ -242,29 +239,29 @@ struct QuestionView: View {
     let customQuestion: Question
     let didSelectAnswerIndex: (Int?) -> Void
     @State private var selectedAnswerIndex: Int?
-
+    
     var body: some View {
         VStack {
             Text(customQuestion.text)
                 .font(.title)
                 .padding()
-
+            
             ForEach(customQuestion.answers.indices, id: \.self) { index in
                 Button(action: {
                     selectedAnswerIndex = index
                 }) {
                     HStack {
-                        Text(selectedAnswerIndex == index ? "✓" : "")
-                            .foregroundColor(selectedAnswerIndex == index ? .green : .clear)
+                        Text(selectedAnswerIndex == index ? "●" : "")
+                            .foregroundColor(selectedAnswerIndex == index ? .blue : .clear)
                             .font(.title)
                         Text(customQuestion.answers[index])
                     }
                     .padding()
                 }
             }
-
+            
             Spacer()
-
+            
             Button("Next") {
                 didSelectAnswerIndex(selectedAnswerIndex)
                 selectedAnswerIndex = nil
@@ -277,7 +274,7 @@ struct QuestionView: View {
 struct FinishedView: View {
     let score: Int
     let totalQuestions: Int
-
+    
     var scoreText: String {
         let percentage = Double(score) / Double(totalQuestions)
         switch percentage {
@@ -293,8 +290,8 @@ struct FinishedView: View {
             return "Keep practicing to improve!"
         }
     }
-
-
+    
+    
     var body: some View {
         VStack {
             Text(scoreText)
