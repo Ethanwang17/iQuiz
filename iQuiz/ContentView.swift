@@ -13,6 +13,18 @@ struct QuizTopic: Identifiable, Codable {
     let title: String
     let desc: String
     let questions: [Question]
+    
+    enum CodingKeys: String, CodingKey {
+        case title, desc, questions
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decode(String.self, forKey: .title)
+        desc = try container.decode(String.self, forKey: .desc)
+        questions = try container.decode([Question].self, forKey: .questions)
+        id = UUID()
+    }
 }
 
 struct ContentView: View {
@@ -71,11 +83,7 @@ struct ContentView: View {
     func loadURLFromSettings() {
         if let savedURL = UserDefaults.standard.string(forKey: "quizDataURL") {
             url = savedURL
-            if let quizData = loadQuizDataFromFile() {
-                self.quizTopics = quizData.map {
-                    QuizTopic(title: $0.title, desc: $0.desc, questions: $0.questions)
-                }
-            }
+            downloadQuizData(from: url)
         } else {
             let defaultURL = "https://tednewardsandbox.site44.com/questions.json"
             url = defaultURL
@@ -84,27 +92,22 @@ struct ContentView: View {
     }
     
     func downloadQuizData(from urlString: String) {
-        print("Downloading data from URL: \(urlString)")
         guard let url = URL(string: urlString) else {
-            print("Invalid URL")
+            invalidURLAlert = true
             return
         }
-        UserDefaults.standard.set(urlString, forKey: "quizDataURL")
         URLSession.shared.dataTask(with: url) { data, response, error in
-            if let data = data {
-                do {
-                    let decoder = JSONDecoder()
-                    let quizData = try decoder.decode([QuizTopic].self, from: data)
-                    DispatchQueue.main.async {
-                        self.quizTopics = quizData
-                        UserDefaults.standard.set(url.absoluteString, forKey: "quizDataURL")
-                    }
-                } catch {
-                    print("Error decoding JSON: \(error)")
+            guard let data = data, error == nil else {
+                self.invalidURLAlert = true
+                return
+            }
+            do {
+                let decoder = JSONDecoder()
+                let quizData = try decoder.decode([QuizTopic].self, from: data)
+                DispatchQueue.main.async {
+                    self.quizTopics = quizData
+                    UserDefaults.standard.set(urlString, forKey: "quizDataURL")
                 }
-            } else {
-                invalidURLAlert = true
-                print("No data received: \(error?.localizedDescription ?? "Unknown error")")
             }
         }.resume()
     }
@@ -114,8 +117,8 @@ struct ContentView: View {
         let queue = DispatchQueue.global(qos: .background)
         
         monitor.pathUpdateHandler = { path in
-            if path.status != .satisfied {
-                isNetworkConnected = true
+            DispatchQueue.main.async {
+                self.isNetworkConnected = path.status != .satisfied
             }
         }
         
