@@ -39,7 +39,7 @@ struct ContentView: View {
             List(quizTopics) { topic in
                 NavigationLink(destination: QuestionListView(customTopic: topic)) {
                     HStack {
-                        Text("🎯") // Emoji in a separate line
+                        Text("🎯")
                             .font(.title)
                         VStack(alignment: .leading) {
                             Text(topic.title)
@@ -98,7 +98,9 @@ struct ContentView: View {
         }
         URLSession.shared.dataTask(with: url) { data, response, error in
             guard let data = data, error == nil else {
-                self.invalidURLAlert = true
+                DispatchQueue.main.async {
+                    self.invalidURLAlert = true
+                }
                 return
             }
             do {
@@ -107,6 +109,10 @@ struct ContentView: View {
                 DispatchQueue.main.async {
                     self.quizTopics = quizData
                     UserDefaults.standard.set(urlString, forKey: "quizDataURL")
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.invalidURLAlert = true
                 }
             }
         }.resume()
@@ -218,16 +224,17 @@ struct AnswerView: View {
     var isAnswerCorrect: Bool {
         userAnswer == correctAnswer
     }
-    
     var body: some View {
         VStack {
             Text(customQuestion.text)
                 .padding()
                 .font(.title)
-            Text("Correct Answer: \(correctAnswer)")
+                .bold() 
+            Text(isAnswerCorrect ? "Nice! You Chose the Correct Answer: \(correctAnswer)" : "Incorrect. The Correct Answer is: \(correctAnswer)")
                 .padding()
                 .foregroundColor(isAnswerCorrect ? .green : .red)
                 .font(.title)
+                .multilineTextAlignment(.center) 
             Text(isAnswerCorrect ? "+1" : " ")
                 .foregroundColor(.green)
             Button("Next") {
@@ -247,6 +254,7 @@ struct QuestionView: View {
         VStack {
             Text(customQuestion.text)
                 .font(.title)
+                .bold() 
                 .padding()
             
             ForEach(customQuestion.answers.indices, id: \.self) { index in
@@ -300,7 +308,10 @@ struct FinishedView: View {
             Text(scoreText)
                 .font(.title)
                 .padding()
-            Text("Your Score: \(score) of \(totalQuestions) correct")
+                .bold() 
+                .multilineTextAlignment(.center) 
+
+            Text("Your got \(score) of \(totalQuestions) correct")
                 .font(.headline)
                 .padding()
         }
